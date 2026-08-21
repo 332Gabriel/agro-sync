@@ -1,0 +1,7 @@
+__pycache__/
+.mypy_cache/
+*.pyc
+agro.db
+venv/
+.env
+*.xlsx

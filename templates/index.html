@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agro-Sync · Aplicações</title>
+
+  <style>
+    /* ---------- Estilo: pensado para uso no campo ----------
+       Alto contraste (sol batendo na tela), campos grandes
+       (dedo sujo, luva), zero enfeite.                        */
+
+    :root {
+      --tinta: #17211b;
+      --papel: #f2f0e9;
+      --cartao: #ffffff;
+      --linha: #d3cfc2;
+      --verde: #2f6b3a;
+      --ambar: #b06a12;
+      --apagado: #6c6d63;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--papel);
+      color: var(--tinta);
+      line-height: 1.5;
+      padding: 20px 16px 60px;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+    }
+
+    .subtitulo {
+      color: var(--apagado);
+      font-size: 0.9rem;
+    }
+
+    /* Faixa de status: online / offline */
+    #status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin: 16px 0;
+    }
+
+    #status .bolinha {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    .online {
+      background: #e2efe4;
+      color: var(--verde);
+    }
+
+    .offline {
+      background: #f6e9d5;
+      color: var(--ambar);
+    }
+
+    .cartao {
+      background: var(--cartao);
+      border: 1px solid var(--linha);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--apagado);
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 12px;
+      font-size: 1rem;
+      border: 1.5px solid var(--linha);
+      border-radius: 6px;
+      background: var(--papel);
+      color: var(--tinta);
+      margin-bottom: 16px;
+      font-family: inherit;
+    }
+
+    input[type="date"] {
+      margin-bottom: 0;
+    }
+
+    .linha-datas {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .linha-datas.desativada {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .opcao-periodo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .opcao-periodo input {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      accent-color: var(--verde);
+    }
+
+    .nota-export {
+      color: var(--apagado);
+      font-size: 0.82rem;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+
+    .btn-exportar {
+      background: var(--tinta);
+    }
+
+    input:focus {
+      outline: 2px solid var(--verde);
+      outline-offset: 1px;
+      border-color: var(--verde);
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--verde);
+      color: #fff;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .btn-secundario {
+      background: transparent;
+      color: var(--tinta);
+      border: 1.5px solid var(--tinta);
+    }
+
+    .btn-secundario:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--apagado);
+      margin-bottom: 12px;
+    }
+
+    .registro {
+      border-left: 3px solid var(--ambar);
+      padding: 8px 0 8px 12px;
+      margin-bottom: 12px;
+      font-size: 0.92rem;
+    }
+
+    .registro strong {
+      display: block;
+    }
+
+    .registro span {
+      color: var(--apagado);
+      font-size: 0.82rem;
+    }
+
+    .registro.com-erro {
+      border-left-color: #b3261e;
+      background: #fdecea;
+    }
+
+    .registro .motivo {
+      display: block;
+      color: #b3261e;
+      font-weight: 700;
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+
+    .vazio {
+      color: var(--apagado);
+      font-size: 0.9rem;
+    }
+
+    #aviso {
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    #aviso.online {
+      background: #e2efe4;
+      color: var(--verde);
+    }
+
+    #aviso.offline {
+      background: #f6e9d5;
+      color: var(--ambar);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <header>
+      <h1>Agro-Sync</h1>
+      <p class="subtitulo">Registro de aplicações em campo</p>
+    </header>
+
+    <div id="status" class="online">
+      <span class="bolinha"></span>
+      <span id="status-texto">Verificando conexão…</span>
+    </div>
+
+    <div id="aviso"></div>
+
+    <!-- ---------- FORMULÁRIO ---------- -->
+    <div class="cartao">
+      <form id="form-aplicacao">
+        <label for="produto">Produto</label>
+        <input type="text" id="produto" placeholder="Ex.: Glifosato 480" required>
+
+        <label for="quantidade">Quantidade</label>
+        <input type="text" id="quantidade" placeholder="Ex.: 2,5 L/ha" required>
+
+        <label for="talhao">Talhão</label>
+        <input type="text" id="talhao" placeholder="Ex.: T-14 Norte" required>
+
+        <button type="submit">Salvar aplicação</button>
+      </form>
+    </div>
+
+    <!-- ---------- FILA PENDENTE ---------- -->
+    <div class="cartao">
+      <h2>Aguardando sincronização (<span id="contador">0</span>)</h2>
+      <div id="lista"></div>
+      <button id="btn-sincronizar" class="btn-secundario" disabled>
+        Sincronizar agora
+      </button>
+    </div>
+
+    <!-- ---------- EXPORTAR PLANILHA ---------- -->
+    <div class="cartao">
+      <h2>Exportar planilha</h2>
+      <p class="nota-export" style="margin-top: 0; margin-bottom: 16px;">
+        Gera um arquivo Excel (.xlsx) formatado para abrir no computador.
+      </p>
+
+      <label class="opcao-periodo">
+        <input type="checkbox" id="todo-periodo" checked>
+        Todo o período
+      </label>
+
+      <div class="linha-datas desativada" id="grupo-datas">
+        <div>
+          <label for="export-de">De</label>
+          <input type="date" id="export-de">
+        </div>
+        <div>
+          <label for="export-ate">Até</label>
+          <input type="date" id="export-ate">
+        </div>
+      </div>
+
+      <button type="button" id="btn-exportar" class="btn-exportar">
+        Baixar planilha
+      </button>
+      <p class="nota-export">
+        Inclui aplicações já enviadas ao sistema e as que ainda estão
+        aguardando sincronização neste aparelho.
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    /* =============================================================
+       LÓGICA OFFLINE-FIRST
+       Regra de ouro: salva local PRIMEIRO. Sincronizar vem depois.
+       ============================================================= */
+
+    // Chave usada no LocalStorage. É só um nome de gaveta.
+    const CHAVE = "agro_pendentes";
+
+    // Atalhos para os elementos da tela
+    const form = document.getElementById("form-aplicacao");
+    const lista = document.getElementById("lista");
+    const contador = document.getElementById("contador");
+    const btnSinc = document.getElementById("btn-sincronizar");
+    const statusBox = document.getElementById("status");
+    const statusTxt = document.getElementById("status-texto");
+    const aviso = document.getElementById("aviso");
+
+
+    /* ---------- 1. LER E GRAVAR NO LOCALSTORAGE ---------- */
+
+    function lerPendentes() {
+      // LocalStorage só devolve texto. JSON.parse transforma em array.
+      // Se a gaveta estiver vazia, começamos com um array vazio.
+      const bruto = localStorage.getItem(CHAVE);
+      return bruto ? JSON.parse(bruto) : [];
+    }
+
+    function gravarPendentes(lista) {
+      // JSON.stringify transforma o array em texto para caber na gaveta.
+      localStorage.setItem(CHAVE, JSON.stringify(lista));
+    }
+
+
+    /* ---------- 2. DESENHAR A TELA ---------- */
+
+    function atualizarTela() {
+      const pendentes = lerPendentes();
+
+      contador.textContent = pendentes.length;
+      btnSinc.disabled = pendentes.length === 0 || !navigator.onLine;
+
+      if (pendentes.length === 0) {
+        lista.innerHTML = '<p class="vazio">Nada pendente. Tudo sincronizado.</p>';
+        return;
+      }
+
+      lista.innerHTML = pendentes.map(r => `
+        <div class="registro ${r.erro ? 'com-erro' : ''}">
+      <strong>${r.produto} — ${r.quantidade}</strong>
+      <span>Talhão ${r.talhao} · ${new Date(r.criado_em).toLocaleString("pt-BR")}</span>
+            ${r.erro ? `<span class="motivo">⚠ ${r.erro}</span>` : ''}
+    </div>
+  `).join("");
+    }
+
+
+    /* ---------- 3. STATUS DA CONEXÃO ---------- */
+
+    function atualizarStatus() {
+      if (navigator.onLine) {
+        statusBox.className = "online";
+        statusTxt.textContent = "Conectado";
+      } else {
+        statusBox.className = "offline";
+        statusTxt.textContent = "Sem conexão — os dados ficam salvos no aparelho";
+      }
+      atualizarTela();
+    }
+
+    // O navegador avisa sozinho quando a conexão cai ou volta.
+    window.addEventListener("online", () => { atualizarStatus(); sincronizar(); });
+    window.addEventListener("offline", atualizarStatus);
+
+
+    /* ---------- 4. SALVAR (o coração do offline-first) ---------- */
+
+    form.addEventListener("submit", function (evento) {
+      // Sem isso, o navegador recarrega a página e perde tudo.
+      evento.preventDefault();
+
+      const registro = {
+        // id_local: identidade do registro, gerada AQUI no aparelho.
+        // E ela que impede o mesmo dado de entrar duas vezes no servidor.
+        id_local: crypto.randomUUID(),
+        produto: document.getElementById("produto").value.trim(),
+        quantidade: document.getElementById("quantidade").value.trim(),
+        talhao: document.getElementById("talhao").value.trim(),
+        criado_em: new Date().toISOString()
+      };
+
+      // PASSO 1: grava local. Sempre. Sem perguntar se tem internet.
+      const pendentes = lerPendentes();
+      pendentes.push(registro);
+      gravarPendentes(pendentes);
+
+      form.reset();
+      atualizarTela();
+      mostrarAviso("Salvo no aparelho.", "online");
+
+      // PASSO 2: só agora tenta mandar para o servidor.
+      if (navigator.onLine) sincronizar();
+    });
+
+
+    /* ---------- 5. SINCRONIZAR ---------- */
+
+    async function sincronizar() {
+      const pendentes = lerPendentes();
+      if (pendentes.length === 0) return;
+
+      try {
+        const resposta = await fetch("/api/sincronizar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ registros: pendentes })
+        });
+
+        if (!resposta.ok) throw new Error("Servidor recusou o envio.");
+
+        const dados = await resposta.json();
+
+        // Mapa: id_local -> motivo da recusa
+        const motivos = new Map(
+          (dados.recusados || []).map(x => [x.id_local, x.motivo])
+        );
+
+        // A fila nova fica só com o que o servidor recusou.
+        const restantes = pendentes
+          .filter(r => motivos.has(r.id_local))
+          .map(r => ({ ...r, erro: motivos.get(r.id_local) }));
+
+        gravarPendentes(restantes);
+        atualizarTela();
+        mostrarAviso(dados.mensagem, "online");
+
+      } catch (erro) {
+        // Deu ruim? Tudo bem. Os dados continuam no aparelho.
+        mostrarAviso("Não deu para sincronizar. Os dados seguem salvos.", "offline");
+        console.error(erro);
+      }
+    }
+
+    btnSinc.addEventListener("click", sincronizar);
+
+
+    /* ---------- 6. EXPORTAR PLANILHA ---------- */
+
+    const todoPeriodo = document.getElementById("todo-periodo");
+    const grupoDatas = document.getElementById("grupo-datas");
+    const exportDe = document.getElementById("export-de");
+    const exportAte = document.getElementById("export-ate");
+    const btnExportar = document.getElementById("btn-exportar");
+
+    todoPeriodo.addEventListener("change", () => {
+      grupoDatas.classList.toggle("desativada", todoPeriodo.checked);
+    });
+
+    function diaDe(iso) {
+      return iso ? iso.slice(0, 10) : "";
+    }
+
+    function dentroDoPeriodo(iso, de, ate) {
+      const dia = diaDe(iso);
+      if (!dia) return false;
+      if (de && dia < de) return false;
+      if (ate && dia > ate) return false;
+      return true;
+    }
+
+    async function exportarPlanilha() {
+      const de = todoPeriodo.checked ? "" : exportDe.value;
+      const ate = todoPeriodo.checked ? "" : exportAte.value;
+
+      if (!todoPeriodo.checked && de && ate && de > ate) {
+        mostrarAviso("A data inicial nao pode ser depois da final.", "offline");
+        return;
+      }
+
+      btnExportar.disabled = true;
+      btnExportar.textContent = "Gerando…";
+
+      try {
+        const pendentes = lerPendentes().filter(
+          r => todoPeriodo.checked || dentroDoPeriodo(r.criado_em, de, ate)
+        );
+
+        const resp = await fetch("/api/exportar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ de: de || null, ate: ate || null, pendentes })
+        });
+
+        if (resp.status === 404) {
+          mostrarAviso("Nenhuma aplicacao encontrada nesse periodo.", "offline");
+          return;
+        }
+
+        if (!resp.ok) {
+          const erro = await resp.json().catch(() => ({}));
+          throw new Error(erro.mensagem || "Falha na exportacao.");
+        }
+
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = de && ate
+          ? `agro-sync_${de}_a_${ate}.xlsx`
+          : de
+            ? `agro-sync_desde_${de}.xlsx`
+            : ate
+              ? `agro-sync_ate_${ate}.xlsx`
+              : "agro-sync_todas-aplicacoes.xlsx";
+        link.click();
+        URL.revokeObjectURL(url);
+
+        mostrarAviso("Planilha baixada com sucesso.", "online");
+
+      } catch (erro) {
+        mostrarAviso("Nao deu para exportar. O servidor esta rodando?", "offline");
+        console.error(erro);
+      } finally {
+        btnExportar.disabled = false;
+        btnExportar.textContent = "Baixar planilha";
+      }
+    }
+
+    btnExportar.addEventListener("click", exportarPlanilha);
+
+
+    /* ---------- 7. AVISOS ---------- */
+
+    function mostrarAviso(texto, tipo) {
+      aviso.textContent = texto;
+      aviso.className = tipo;
+      aviso.style.display = "block";
+      setTimeout(() => { aviso.style.display = "none"; }, 3500);
+    }
+
+
+    /* ---------- 8. ARRANQUE ---------- */
+    atualizarStatus();
+    if (navigator.onLine) sincronizar();
+  </script>
+</body>
+
+</html>
