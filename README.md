@@ -99,7 +99,7 @@ Acesse `http://localhost:5000`
 
 ## Stack
 
-Flask · SQLite · JavaScript · LocalStorage · openpyxl
+Flask · PostgreSQL · JavaScript · LocalStorage · openpyxl
 
 ---
 
@@ -111,7 +111,7 @@ Flask · SQLite · JavaScript · LocalStorage · openpyxl
 - **Campo de produto livre, sem catálogo.** Em teste, "glifosato",
   "glifosfato" e "Glifosato 480" foram registrados como três produtos
   distintos. Qualquer soma por produto sai errada.
-- **SQLite em arquivo local.** Não sobrevive a deploy em container sem volume
+- **PostgreSQL em arquivo local.** Não sobrevive a deploy em container sem volume
   persistente configurado.
 - **Servidor de desenvolvimento.** O Flask embutido não é adequado para
   produção.

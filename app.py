@@ -5,19 +5,20 @@
 
 import io
 import os
-import sqlite3
+import psycopg2
+import psycopg2.extras
+from dotenv import load_dotenv
 from datetime import datetime, timezone
-
 from flask import Flask, request, jsonify, render_template, g, Response
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 app = Flask(__name__)
+load_dotenv()
 
 # Caminho do arquivo do banco. E so um arquivo na pasta do projeto.
-BANCO = os.path.join(os.path.dirname(__file__), "agro.db")
-
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # -------------------------------------------------------------
 # 1) CONEXAO COM O BANCO
@@ -27,8 +28,7 @@ BANCO = os.path.join(os.path.dirname(__file__), "agro.db")
 # consulta dentro da mesma requisicao.
 def conectar():
     if "db" not in g:
-        g.db = sqlite3.connect(BANCO)
-        g.db.row_factory = sqlite3.Row   # devolve linhas tipo dicionario
+              g.db = psycopg2.connect(DATABASE_URL)
     return g.db
 
 
@@ -49,19 +49,22 @@ def fechar(excecao):
 #   corrige_id -> se este registro corrige outro, aponta para o antigo.
 #                 O errado continua no banco, visivel. Isso e a trilha.
 def criar_tabela():
-    with sqlite3.connect(BANCO) as db:
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS aplicacoes (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_local    TEXT    NOT NULL UNIQUE,
-                produto     TEXT    NOT NULL,
-                quantidade  TEXT    NOT NULL,
-                talhao      TEXT    NOT NULL,
-                criado_em   TEXT    NOT NULL,
-                recebido_em TEXT    NOT NULL,
-                corrige_id  TEXT
-            )
-        """)
+    conexao = psycopg2.connect(DATABASE_URL)
+    with conexao:
+        with conexao.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS aplicacoes (
+                    id          SERIAL PRIMARY KEY,
+                    id_local    TEXT NOT NULL UNIQUE,
+                    produto     TEXT NOT NULL,
+                    quantidade  TEXT NOT NULL,
+                    talhao      TEXT NOT NULL,
+                    criado_em   TEXT NOT NULL,
+                    recebido_em TEXT NOT NULL,
+                    corrige_id  TEXT
+                )
+            """)
+    conexao.close()
 
 
 # -------------------------------------------------------------
@@ -109,23 +112,24 @@ def sincronizar():
         #      protecao, o registro entraria duas vezes.
         #      O UNIQUE em id_local faz o SQLite recusar a copia, e o
         #      "OR IGNORE" faz ele recusar em silencio, sem erro.
-        cursor = db.execute("""
-            INSERT OR IGNORE INTO aplicacoes
-                (id_local, produto, quantidade, talhao,
-                 criado_em, recebido_em, corrige_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            id_local, produto, quantidade, talhao,
-            r.get("criado_em", ""),
-            datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            r.get("corrige_id")
-        ))
+    with db.cursor() as cur:
+            cur.execute("""
+                INSERT INTO aplicacoes
+                    (id_local, produto, quantidade, talhao,
+                     criado_em, recebido_em, corrige_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id_local) DO NOTHING
+            """, (
+                id_local, produto, quantidade, talhao,
+                r.get("criado_em", ""),
+                datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                r.get("corrige_id")
+            ))
 
-        if cursor.rowcount == 1:
-            gravados += 1
-        else:
-            repetidos += 1   # ja estava no banco. Nao e erro.
-
+            if cur.rowcount == 1:
+                gravados += 1
+            else:
+                repetidos += 1     
     db.commit()
 
     # 4.3) Log no terminal, para voce enxergar o que aconteceu.
@@ -352,15 +356,10 @@ def gerar_planilha_xlsx(registros: list[dict], de: str | None, ate: str | None) 
 
 @app.route("/api/registros", methods=["GET"])
 def registros():
-    de = _parse_data(request.args.get("de"))
-    ate = _parse_data(request.args.get("ate"))
-
-    if request.args.get("de") and de is None:
-        return jsonify({"status": "erro", "mensagem": "Data inicial invalida."}), 400
-    if request.args.get("ate") and ate is None:
-        return jsonify({"status": "erro", "mensagem": "Data final invalida."}), 400
-
-    linhas = buscar_aplicacoes(de, ate)
+    db = conectar()
+    with db.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute("SELECT * FROM aplicacoes ORDER BY id DESC LIMIT 200")
+        linhas = cur.fetchall()
     return jsonify([dict(l) for l in linhas]), 200
 
 
@@ -394,4 +393,6 @@ def exportar():
 
 if __name__ == "__main__":
     criar_tabela()
-    app.run(debug=True, port=5000)
+    porta = int(os.getenv("PORT", 5000))
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", port=porta, debug=debug)
