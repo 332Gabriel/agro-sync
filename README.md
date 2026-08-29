@@ -95,6 +95,7 @@ python app.py
 
 Acesse `http://localhost:5000`
 
+Acesse `https://agro-sync-1.onrender.com`
 ---
 
 ## Stack
